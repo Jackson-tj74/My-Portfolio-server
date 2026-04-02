@@ -23,7 +23,7 @@ app.get(/.*/, (req, res) => {
   return handleSuccess(
     res,
     StatusCodes.OK,
-    'WELCOME TO OUR COMMUNITY SERVICE',
+    'WELCOME MY PORTFOLIO',
     {},
   );
 });
