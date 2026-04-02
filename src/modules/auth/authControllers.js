@@ -1,7 +1,7 @@
 
 
 import express from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../../database/models/User.js";
 import Message from "../../database/models/Message.js";
