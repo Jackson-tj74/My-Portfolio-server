@@ -26,10 +26,10 @@ class authControllers{
     const user = new User({ name, email, password: hashedPassword });
     await user.save();
 
-    const MyportfolioLink = `${process.env.CLIENT_URL}/my-portfoliotj.vercel.app`;
+    const MyportfolioLink = `${process.env.CLIENT_URL}/https://my-portfolio-tj.netlify.app/projects`;
 
     await sendEmail({
-      action: "my-portfoliotj.vercel.app",
+      action: "wellcome-message",
       receiverEmail: user.email,
       link: MyportfolioLink,
     });
@@ -96,10 +96,10 @@ static message = async (req, res) => {
 
     await newMessage.save();
 
-   const MyportfolioLink = `${process.env.CLIENT_URL}https://my-portfoliotj.vercel.app`;
+   const MyportfolioLink = `${process.env.CLIENT_URL}https://my-portfolio-tj.netlify.app/projects`;
 
     await sendEmail({
-      action: "https://my-portfoliotj.vercel.app",
+      action: "thank-message",
       receiverEmail: email,
       link: MyportfolioLink,
     });

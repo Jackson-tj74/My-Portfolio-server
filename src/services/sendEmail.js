@@ -15,11 +15,12 @@ export const sendEmail = async (email) => {
       user: process.env.SMTP_GMAIL_SENDER_EMAIL,
       pass: process.env.SMTP_GMAIL_SENDER_PASSWORD,
     },
+    family: 4,
   });
 
   try {
-  if (email?.action === 'my-portfoliotj.vercel.app') return await transporter.sendMail(welcomePortfolioTemplate(email?.receiverEmail, email?.action, email?.link));
-  if (email?.action === 'https://my-portfoliotj.vercel.app') return await transporter.sendMail(thankYouContactTemplate(email?.receiverEmail, email?.action, email?.link));
+  if (email?.action === 'wellcome-message') return await transporter.sendMail(welcomePortfolioTemplate(email?.receiverEmail, email?.action, email?.link));
+  if (email?.action === 'thank-message') return await transporter.sendMail(thankYouContactTemplate(email?.receiverEmail, email?.action, email?.link));
   } catch (error) {
     console.error("Email sending failed:", error);
     throw error;
