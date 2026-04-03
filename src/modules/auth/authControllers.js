@@ -96,7 +96,7 @@ static message = async (req, res) => {
 
     await newMessage.save();
 
-   const MyportfolioLink = `${process.env.CLIENT_URL}https://my-portfolio-tj.netlify.app/projects`;
+   const MyportfolioLink = `${process.env.CLIENT_URL}https://my-portfolio-tj.netlify.app`;
 
     await sendEmail({
       action: "thank-message",
