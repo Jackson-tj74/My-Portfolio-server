@@ -35,16 +35,17 @@ router.get(
   
 );
 
+
 router.delete(
-  "/delete-contacts",
+  "/delete-contact/:id",
   authControllers.deleteMessage
   
 );
 
-router.post("/logout", verifyAccessToken(["provider"]),authControllers.logout);
-router.get("/profile", verifyAccessToken(["provider"]), authControllers.getProfile);
-router.patch("/edit-profile",verifyAccessToken(["provider"]), multipart, uploadService,authControllers.updateProfile);
-router.delete("/delete-account", verifyAccessToken(["provider"]),authControllers.deleteAccount);
+router.post("/logout", verifyAccessToken("provider"),authControllers.logout);
+router.get("/profile", verifyAccessToken("provider"), authControllers.getProfile);
+router.patch("/edit-profile",verifyAccessToken("provider"), multipart, uploadService,authControllers.updateProfile);
+router.delete("/delete-account", verifyAccessToken("provider"),authControllers.deleteAccount);
 
 
 

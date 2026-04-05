@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 
-import {  welcomePortfolioTemplate } from "../utils/EmailTemplates.js";
+import {  ContactMeTemplate, welcomePortfolioTemplate } from "../utils/EmailTemplates.js";
 import { thankYouContactTemplate } from "../utils/EmailTemplates.js";
-import { ContactMeTemplate } from "../utils/EmailTemplates.js";
+
 
 dotenv.config({ quiet: true });
 
@@ -22,7 +22,7 @@ export const sendEmail = async (email) => {
   try {
   if (email?.action === 'wellcome-message') return await transporter.sendMail(welcomePortfolioTemplate(email?.receiverEmail, email?.action, email?.link));
   if (email?.action === 'thank-message') return await transporter.sendMail(thankYouContactTemplate(email?.receiverEmail, email?.action, email?.link));
- if (email?.action === "contact-us") return await transporter.sendMail(ContactUsTemplate(email.receiverEmail,email.fullName,email.email,email.subject,email.message) );
+ if (email?.action === "contact-us") return await transporter.sendMail(ContactMeTemplate(email.receiverEmail,email.fullName,email.email,email.subject,email.message) );
   } catch (error) {
     console.error("Email sending failed:", error);
     throw error;

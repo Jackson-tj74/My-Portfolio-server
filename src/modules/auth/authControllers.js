@@ -102,7 +102,7 @@ class authControllers {
 
   static deleteMessage = async (req, res) => {
     try {
-      const { id } = req.params; // Assume ID comes from URL params
+      const { id } = req.params; 
       const deleted = await findMessageAndDelete(id);
       if (!deleted) return handleError(res, StatusCodes.NOT_FOUND, "Message not found");
 
