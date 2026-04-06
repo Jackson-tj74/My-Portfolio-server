@@ -1,30 +1,54 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-
-import {  ContactMeTemplate, welcomePortfolioTemplate } from "../utils/EmailTemplates.js";
-import { thankYouContactTemplate } from "../utils/EmailTemplates.js";
-
+import { 
+  ContactMeTemplate, 
+  welcomePortfolioTemplate, 
+  thankYouContactTemplate 
+} from "../utils/EmailTemplates.js";
 
 dotenv.config({ quiet: true });
 
-export const sendEmail = async (email) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_HOST_PORT),
-    secure: true,
-    auth: {
-      user: process.env.SMTP_GMAIL_SENDER_EMAIL,
-      pass: process.env.SMTP_GMAIL_SENDER_PASSWORD,
-    },
-    family: 4,
-  });
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_HOST_PORT) || 465,
+  secure: true, 
+  auth: {
+    user: process.env.SMTP_GMAIL_SENDER_EMAIL,
+    pass: process.env.SMTP_GMAIL_SENDER_PASSWORD,
+  },
+  family: 4, 
+});
+
+
+export const sendEmail = async (options) => {
+  const { action, receiverEmail, fullName, email, subject, message, link } = options;
 
   try {
-  if (email?.action === 'wellcome-message') return await transporter.sendMail(welcomePortfolioTemplate(email?.receiverEmail, email?.action, email?.link));
-  if (email?.action === 'thank-message') return await transporter.sendMail(thankYouContactTemplate(email?.receiverEmail, email?.action, email?.link));
- if (email?.action === "contact-us") return await transporter.sendMail(ContactMeTemplate(email.receiverEmail,email.fullName,email.email,email.subject,email.message) );
+    let mailOptions;
+
+    switch (action) {
+      case "welcome-message":
+        
+        mailOptions = welcomePortfolioTemplate(receiverEmail, action, link);
+        break;
+
+      case "thank-message":
+        mailOptions = thankYouContactTemplate(receiverEmail, action, link);
+        break;
+
+      case "contact-us":
+        mailOptions = ContactMeTemplate(receiverEmail, fullName, email, subject, message);
+        break;
+
+      default:
+        console.warn(`No template found for action: ${action}`);
+        return null;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
+    return info;
   } catch (error) {
-    console.error("Email sending failed:", error);
-    throw error;
+    console.error(`Email sending failed for action [${action}]:`, error);
+    throw error; 
   }
 };

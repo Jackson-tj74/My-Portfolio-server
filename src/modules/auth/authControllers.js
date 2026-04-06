@@ -59,35 +59,46 @@ class authControllers {
     }
   };
 
-static message = async (req, res) => {
+ static  message = async (req, res) => {
   try {
     const { name, email, service, message } = req.body;
 
     const newMessage = await createMessage({ name, email, service, message });
 
-    handleSuccess(res, StatusCodes.CREATED, "Message sent successfully", newMessage);
+    const portfolioLink = process.env.PORTFOLIO_URL || "my-portfolio-tj.netlify.app";
 
+    await Promise.all([
+      
+      sendEmail({
+        action: "contact-us",
+        receiverEmail: process.env.SMTP_GMAIL_SENDER_EMAIL,
+        fullName: name,
+        email: email,
+        subject: service || "New Contact Message",
+        message: message,
+      }),
+      
+      sendEmail({
+        action: "thank-message",
+        receiverEmail: email,
+        link: portfolioLink,
+      }),
+    ]);
 
-    sendEmail({
-      action: "contact-us",
-      receiverEmail: process.env.SMTP_GMAIL_SENDER_EMAIL,
-      fullName: name,
-      email: email,
-      subject: service || "New Contact Message",
-      message: message,
-    }).catch(err => console.error("Contact email failed:", err));
-
-    sendEmail({
-      action: "thank-message",
-      receiverEmail: email,
-      link: "https://my-portfolio-tj.netlify.app",
-    }).catch(err => console.error("Thank you email failed:", err));
-
+    return res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: "Message sent successfully",
+      data: newMessage,
+    });
   } catch (error) {
-   
-    return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
+    console.error("Controller Error:", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
 
   static findMessages = async (req, res) => {
     try {
