@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import {  FindUserByID } from "../modules/auth/authRepositories.js"
-import { handleError,handleSuccess } from "../utils/responseUtils.js";
+import { handleError } from "../utils/responseUtils.js";
 
 import { verifyToken } from "../utils/jwtUtils.js";
 
@@ -36,7 +36,8 @@ const verifyAccessToken = (passRoles) => {
       return handleError(res, StatusCodes.NOT_FOUND, "Unauthenticated");
     }
 
-    if (!passRoles.includes(user.role)) {
+    const allowedRoles = Array.isArray(passRoles) ? passRoles : [passRoles];
+    if (!allowedRoles.includes(user.role)) {
           return res.status(401).json({ status: 403, message: 'Unauthorized' });
         }
 

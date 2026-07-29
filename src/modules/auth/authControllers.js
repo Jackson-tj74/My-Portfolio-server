@@ -7,11 +7,15 @@ import { sendEmail } from "../../services/sendEmail.js";
 
 import { 
   createUser, findUser, deleteOneToken, FindUserByID, 
-  updatedProfile, createMessage, getAllMessages, findMessageAndDelete,deleteUserComplete
+  updatedProfile, createMessage, getAllMessages, countMessages, updateMessage, findMessageAndDelete,deleteUserComplete
 } from './authRepositories.js';
 
 
 import { generateAccessToken } from '../../utils/jwtUtils.js';
+import { notifyProviders } from '../../services/notificationService.js';
+import Message from '../../database/models/Message.js';
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 class authControllers {
   
@@ -26,12 +30,17 @@ class authControllers {
       const user = await createUser({ name, email, password: hashedPassword });
 
       await sendEmail({
-        action: "wellcome-message",
+        action: "welcome-message",
         receiverEmail: user.email,
         link: `${process.env.CLIENT_URL}/projects`,
       });
 
-      return handleSuccess(res, StatusCodes.CREATED, "User successfully created", user);
+      return handleSuccess(res, StatusCodes.CREATED, "User successfully created", {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
     } catch (error) {
       return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
     }
@@ -41,7 +50,7 @@ class authControllers {
     try {
       const { email, password } = req.body;
 
-      const user = await findUser({ email });
+      const user = await findUser({ email: email.toLowerCase() }, true);
       if (!user) return handleError(res, StatusCodes.UNAUTHORIZED, "Please register your account");
 
       const isMatch = await bcrypt.compare(password, user.password);
@@ -50,6 +59,9 @@ class authControllers {
       
       const token = generateAccessToken(user._id);
 
+      // Notifications are useful but must never prevent a valid login.
+      await notifyProviders({ type: "login", title: "Admin login", message: `${user.name || user.email} signed in to the dashboard.`, link: "/dashboard", metadata: { userId: user._id.toString() } }).catch(() => {});
+      void sendEmail({ action: "login-alert", receiverEmail: user.email, message: `A dashboard login was detected for ${user.email}.` }).catch(() => {});
       return res.status(StatusCodes.OK).json({
         token,
         user: { id: user._id, name: user.name, email: user.email },
@@ -65,12 +77,21 @@ class authControllers {
 
     const newMessage = await createMessage({ name, email, service, message });
 
+    await notifyProviders({
+      type: "message",
+      title: "New contact message",
+      message: `${name} sent a new ${service || "portfolio"} inquiry.`,
+      link: "/dashboard",
+      metadata: { messageId: newMessage._id.toString(), senderEmail: email },
+    });
+
     const portfolioLink = process.env.PORTFOLIO_URL || "my-portfolio-tj.netlify.app";
 
+    const messageAction = ["Web Development", "Cloud Solutions"].includes(service) ? "project-inquiry" : "contact-us";
     await Promise.all([
       
       sendEmail({
-        action: "contact-us",
+        action: messageAction,
         receiverEmail: process.env.SMTP_GMAIL_SENDER_EMAIL,
         fullName: name,
         email: email,
@@ -99,14 +120,61 @@ class authControllers {
   }
 };
 
+  static replyToMessage = async (req, res) => {
+    try {
+      const messageRecord = await Message.findById(req.params.id);
+      if (!messageRecord) return handleError(res, StatusCodes.NOT_FOUND, "Message not found");
+      const { reply } = req.body;
+      await sendEmail({ action: "admin-reply", receiverEmail: messageRecord.email, subject: `Reply to ${messageRecord.service}`, reply, relatedId: messageRecord._id.toString() });
+      const updated = await updateMessage(req.params.id, { repliedAt: new Date(), status: "read" });
+      return handleSuccess(res, StatusCodes.OK, "Reply sent successfully", updated);
+    } catch (error) { return handleError(res, StatusCodes.BAD_GATEWAY, error.message); }
+  };
+
 
   static findMessages = async (req, res) => {
     try {
-      const visitorsMessages = await getAllMessages();
-      if (!visitorsMessages || visitorsMessages.length === 0) {
-        return handleError(res, StatusCodes.NOT_FOUND, "No messages found");
+      const { status, search } = req.query;
+      const query = {};
+      if (["unread", "read", "archived"].includes(status)) query.status = status;
+      if (search?.trim()) {
+        const safeSearch = escapeRegex(search.trim());
+        query.$or = [
+        { name: { $regex: safeSearch, $options: "i" } },
+        { email: { $regex: safeSearch, $options: "i" } },
+        { service: { $regex: safeSearch, $options: "i" } },
+        { message: { $regex: safeSearch, $options: "i" } },
+      ];
       }
+      const visitorsMessages = await getAllMessages(query);
       return handleSuccess(res, StatusCodes.OK, "Messages retrieved successfully", visitorsMessages);
+    } catch (error) {
+      return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
+    }
+  };
+
+  static getDashboardStats = async (req, res) => {
+    try {
+      const [messages, unreadMessages, archivedMessages] = await Promise.all([
+        countMessages(), countMessages({ status: "unread" }), countMessages({ status: "archived" }),
+      ]);
+      return handleSuccess(res, StatusCodes.OK, "Dashboard statistics retrieved", {
+        messages, unreadMessages, archivedMessages,
+      });
+    } catch (error) {
+      return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
+    }
+  };
+
+  static updateMessageStatus = async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!["unread", "read", "archived"].includes(status)) {
+        return handleError(res, StatusCodes.BAD_REQUEST, "Invalid message status");
+      }
+      const message = await updateMessage(req.params.id, { status });
+      if (!message) return handleError(res, StatusCodes.NOT_FOUND, "Message not found");
+      return handleSuccess(res, StatusCodes.OK, "Message status updated", message);
     } catch (error) {
       return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
     }

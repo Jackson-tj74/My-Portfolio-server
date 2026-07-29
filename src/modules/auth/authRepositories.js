@@ -5,7 +5,10 @@ import Message from "../../database/models/Message.js";
 
 const createUser = (data) => User.create(data);
 
-const findUser = (query) => User.findOne(query);
+const findUser = (query, includePassword = false) => {
+  const request = User.findOne(query);
+  return includePassword ? request.select("+password") : request;
+};
 
 const createToken = (token, userId, deviceId) => Token.create({ token, userId, deviceId });
 
@@ -28,7 +31,11 @@ const changePassword = (userId, newPassword) =>
 
 const createMessage = (data) => Message.create(data);
 
-const getAllMessages = () => Message.find();
+const getAllMessages = (query = {}) => Message.find(query).sort({ createdAt: -1 });
+
+const countMessages = (query = {}) => Message.countDocuments(query);
+
+const updateMessage = (id, data) => Message.findByIdAndUpdate(id, data, { new: true, runValidators: true });
 
 const findMessageAndDelete = (id) => Message.findByIdAndDelete(id);
 
@@ -59,6 +66,8 @@ export {
   changePassword,
   createMessage,
   getAllMessages,
+  countMessages,
+  updateMessage,
   findMessageAndDelete,
   deleteUserComplete
 };

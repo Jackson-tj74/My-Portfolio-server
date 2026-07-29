@@ -1,54 +1,32 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-import { 
-  ContactMeTemplate, 
-  welcomePortfolioTemplate, 
-  thankYouContactTemplate 
-} from "../utils/EmailTemplates.js";
+import EmailDelivery from "../database/models/EmailDelivery.js";
+import { buildEmail } from "../utils/EmailTemplates.js";
 
 dotenv.config({ quiet: true });
 
+const port = Number(process.env.SMTP_HOST_PORT) || 465;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_HOST_PORT) || 465,
-  secure: true, 
-  auth: {
-    user: process.env.SMTP_GMAIL_SENDER_EMAIL,
-    pass: process.env.SMTP_GMAIL_SENDER_PASSWORD,
-  },
-  family: 4, 
+  port,
+  secure: port === 465,
+  auth: { user: process.env.SMTP_GMAIL_SENDER_EMAIL, pass: process.env.SMTP_GMAIL_SENDER_PASSWORD },
+  family: 4,
 });
 
+export const verifyEmailTransport = () => transporter.verify();
 
 export const sendEmail = async (options) => {
-  const { action, receiverEmail, fullName, email, subject, message, link } = options;
-
+  const type = options.action || options.type;
+  const mail = buildEmail(type, options);
   try {
-    let mailOptions;
-
-    switch (action) {
-      case "welcome-message":
-        
-        mailOptions = welcomePortfolioTemplate(receiverEmail, action, link);
-        break;
-
-      case "thank-message":
-        mailOptions = thankYouContactTemplate(receiverEmail, action, link);
-        break;
-
-      case "contact-us":
-        mailOptions = ContactMeTemplate(receiverEmail, fullName, email, subject, message);
-        break;
-
-      default:
-        console.warn(`No template found for action: ${action}`);
-        return null;
-    }
-
-    const info = await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mail);
+    await EmailDelivery.create({ type, recipient: mail.to, subject: mail.subject, status: "sent", providerMessageId: info.messageId, relatedId: options.relatedId || "" });
     return info;
   } catch (error) {
-    console.error(`Email sending failed for action [${action}]:`, error);
-    throw error; 
+    await EmailDelivery.create({ type, recipient: mail.to, subject: mail.subject, status: "failed", error: error.message, relatedId: options.relatedId || "" }).catch(() => {});
+    throw error;
   }
 };
+
+export const getEmailTransportStatus = () => ({ configured: Boolean(process.env.SMTP_HOST && process.env.SMTP_GMAIL_SENDER_EMAIL && process.env.SMTP_GMAIL_SENDER_PASSWORD), host: process.env.SMTP_HOST || "", port });
