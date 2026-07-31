@@ -5,23 +5,32 @@ import { buildEmail } from "../utils/EmailTemplates.js";
 
 dotenv.config({ quiet: true });
 
-const port = Number(process.env.SMTP_HOST_PORT) || 465;
+const emailUser = process.env.SMTP_GMAIL_SENDER_EMAIL;
+const rawPassword = process.env.SMTP_GMAIL_SENDER_PASSWORD;
 
+const emailPassword = rawPassword ? rawPassword.replace(/\s+/g, "") : "";
 
-const emailPassword = process.env.SMTP_GMAIL_SENDER_PASSWORD
-  ? process.env.SMTP_GMAIL_SENDER_PASSWORD.replace(/\s+/g, "")
-  : "";
+const port = Number(process.env.SMTP_HOST_PORT) || 587;
 
 const transporter = nodemailer.createTransport({
+  service: "gmail",
   host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port,
+  port: port,
   secure: port === 465, 
   auth: {
-    user: process.env.SMTP_GMAIL_SENDER_EMAIL,
+    user: emailUser,
     pass: emailPassword,
   },
+
   family: 4, 
-  connectionTimeout: 10000,
+  dnsTimeout: 10000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
+  tls: {
+   
+    rejectUnauthorized: false
+  }
 });
 
 export const verifyEmailTransport = async () => {
@@ -40,13 +49,12 @@ export const sendEmail = async (options) => {
   const mail = buildEmail(type, options);
 
   let info;
-  
-  
+
   try {
     info = await transporter.sendMail(mail);
     console.log("✅ Email sent successfully:", info.messageId);
   } catch (emailError) {
-    console.error("❌ Nodemailer sendMail Error:", emailError);
+    console.error("❌ Nodemailer sendMail Error:", emailError.message);
 
     try {
       await EmailDelivery.create({
@@ -58,12 +66,11 @@ export const sendEmail = async (options) => {
         relatedId: options.relatedId || "",
       });
     } catch (dbError) {
-      console.warn("⚠️ Could not write email failure log to Database:", dbError.message);
+      console.warn("⚠️ Could not write failure log to DB:", dbError.message);
     }
 
-    throw emailError; 
+    throw emailError;
   }
-
 
   try {
     await EmailDelivery.create({
@@ -75,18 +82,14 @@ export const sendEmail = async (options) => {
       relatedId: options.relatedId || "",
     });
   } catch (dbError) {
-    console.warn("⚠️ Email sent, but failed to record in Database log:", dbError.message);
+    console.warn("⚠️ Email sent, but failed to log to DB:", dbError.message);
   }
 
   return info;
 };
 
 export const getEmailTransportStatus = () => ({
-  configured: Boolean(
-    (process.env.SMTP_HOST || "smtp.gmail.com") &&
-      process.env.SMTP_GMAIL_SENDER_EMAIL &&
-      process.env.SMTP_GMAIL_SENDER_PASSWORD
-  ),
+  configured: Boolean(emailUser && emailPassword),
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port,
 });
