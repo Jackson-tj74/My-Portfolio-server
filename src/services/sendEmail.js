@@ -5,91 +5,53 @@ import { buildEmail } from "../utils/EmailTemplates.js";
 
 dotenv.config({ quiet: true });
 
-const emailUser = process.env.SMTP_GMAIL_SENDER_EMAIL;
-const rawPassword = process.env.SMTP_GMAIL_SENDER_PASSWORD;
-
-const emailPassword = rawPassword ? rawPassword.replace(/\s+/g, "") : "";
-
-const port = Number(process.env.SMTP_HOST_PORT) || 587;
+const port = Number(process.env.SMTP_HOST_PORT) || 465;
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: port,
   secure: port === 465, 
   auth: {
-    user: emailUser,
-    pass: emailPassword,
+    user: process.env.SMTP_GMAIL_SENDER_EMAIL,
+    pass: process.env.SMTP_GMAIL_SENDER_PASSWORD
+      ? process.env.SMTP_GMAIL_SENDER_PASSWORD.replace(/\s+/g, "")
+      : "",
   },
-
+ 
   family: 4, 
-  dnsTimeout: 10000,
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 15000,
-  tls: {
-   
-    rejectUnauthorized: false
-  }
+  connectionTimeout: 20000, 
 });
-
-export const verifyEmailTransport = async () => {
-  try {
-    const verification = await transporter.verify();
-    console.log("✅ SMTP Server is ready to send messages");
-    return verification;
-  } catch (error) {
-    console.error("❌ SMTP Verification Failed:", error.message);
-    throw error;
-  }
-};
 
 export const sendEmail = async (options) => {
   const type = options.action || options.type;
   const mail = buildEmail(type, options);
 
-  let info;
-
   try {
-    info = await transporter.sendMail(mail);
-    console.log("✅ Email sent successfully:", info.messageId);
-  } catch (emailError) {
-    console.error("❌ Nodemailer sendMail Error:", emailError.message);
+    const info = await transporter.sendMail(mail);
+    
+    
+    await EmailDelivery.create({ 
+      type, 
+      recipient: mail.to, 
+      subject: mail.subject, 
+      status: "sent", 
+      providerMessageId: info.messageId, 
+      relatedId: options.relatedId || "" 
+    }).catch(() => {});
 
-    try {
-      await EmailDelivery.create({
-        type,
-        recipient: mail.to,
-        subject: mail.subject,
-        status: "failed",
-        error: emailError.message,
-        relatedId: options.relatedId || "",
-      });
-    } catch (dbError) {
-      console.warn("⚠️ Could not write failure log to DB:", dbError.message);
-    }
+    return info;
+  } catch (error) {
+    console.error("Nodemailer Error:", error);
 
-    throw emailError;
+    await EmailDelivery.create({ 
+      type, 
+      recipient: mail.to, 
+      subject: mail.subject, 
+      status: "failed", 
+      error: error.message, 
+      relatedId: options.relatedId || "" 
+    }).catch(() => {});
+
+    throw error;
   }
-
-  try {
-    await EmailDelivery.create({
-      type,
-      recipient: mail.to,
-      subject: mail.subject,
-      status: "sent",
-      providerMessageId: info.messageId,
-      relatedId: options.relatedId || "",
-    });
-  } catch (dbError) {
-    console.warn("⚠️ Email sent, but failed to log to DB:", dbError.message);
-  }
-
-  return info;
 };
-
-export const getEmailTransportStatus = () => ({
-  configured: Boolean(emailUser && emailPassword),
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port,
-});
