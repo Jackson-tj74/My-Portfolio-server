@@ -1,10 +1,9 @@
 const brand = "Tuyikunde Jackson Portfolio";
-const sender = () => `${brand} <${process.env.SMTP_GMAIL_SENDER_EMAIL}>`;
 
-export const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+const AMP = String.fromCharCode(38);
+export const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({ "&": AMP + "amp;", "<": AMP + "lt;", ">": AMP + "gt;", "'": AMP + "#39;", '"': AMP + "quot;" })[character]);
 
 const baseTemplate = ({ title, intro, body, cta, ctaLink }) => ({
-  from: sender(),
   html: `<!doctype html><html><body style="margin:0;background:#f3f7f4;font-family:Arial,sans-serif;color:#173226"><table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #dcebe0"><tr><td style="padding:28px;background:#14532d;color:#fff"><h1 style="margin:0;font-size:22px">${brand}</h1></td></tr><tr><td style="padding:36px"><h2 style="margin:0 0 12px;color:#14532d">${escapeHtml(title)}</h2><p style="font-size:15px;line-height:1.7;color:#52665a">${escapeHtml(intro)}</p>${body || ""}${cta && ctaLink ? `<p style="margin-top:28px"><a href="${escapeHtml(ctaLink)}" style="display:inline-block;background:#16a34a;color:#fff;padding:13px 20px;border-radius:10px;text-decoration:none;font-weight:bold">${escapeHtml(cta)}</a></p>` : ""}</td></tr><tr><td style="padding:20px 36px;background:#f5faf6;color:#718078;font-size:12px">This is an automated message from ${brand}.</td></tr></table></td></tr></table></body></html>`,
 });
 

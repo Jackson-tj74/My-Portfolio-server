@@ -1,56 +1,72 @@
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
-import dns from "dns";
+import { Resend } from "resend";
 import EmailDelivery from "../database/models/EmailDelivery.js";
 import { buildEmail } from "../utils/EmailTemplates.js";
 
 dotenv.config({ quiet: true });
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-dns.setDefaultResultOrder("ipv4first");
+export const isSandboxMode = () =>
+  (process.env.RESEND_FROM_EMAIL || "").includes("onboarding@resend.dev");
+
+export const getEmailConfig = () => ({
+  configured: Boolean(process.env.RESEND_API_KEY),
+  provider: "resend",
+  from: process.env.RESEND_FROM_EMAIL || "Acme <onboarding@resend.dev>",
+  sandbox: isSandboxMode(),
+  adminEmail: process.env.ADMIN_EMAIL || "",
+  warning: isSandboxMode()
+    ? "Using Resend sandbox address. Verify a domain at resend.com/domains to send to any address."
+    : "",
+});
+
+export const canSendToEmail = (email) => {
+  if (!email) return false;
+  if (!isSandboxMode()) return true;
+  return email.toLowerCase() === (process.env.ADMIN_EMAIL || "").toLowerCase();
+};
 
 export const sendEmail = async (options) => {
   const type = options.action || options.type;
   const mail = buildEmail(type, options);
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_HOST_PORT) || 465,
-    secure: true,
-    auth: {
-      user: process.env.SMTP_GMAIL_SENDER_EMAIL,
-      pass: process.env.SMTP_GMAIL_SENDER_PASSWORD
-        ? process.env.SMTP_GMAIL_SENDER_PASSWORD.replace(/\s+/g, "")
-        : "",
-    },
-    family: 4,
-  });
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not configured.");
+  }
 
   try {
-    const info = await transporter.sendMail(mail);
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "Acme <onboarding@resend.dev>",
+      to: mail.to,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    });
 
-    
+    if (error) throw new Error(error.message);
+
     EmailDelivery.create({
       type,
-      recipient: mail.to,
+      recipient: Array.isArray(mail.to) ? mail.to.join(",") : mail.to,
       subject: mail.subject,
       status: "sent",
-      providerMessageId: info.messageId,
+      providerMessageId: data.id,
       relatedId: options.relatedId || "",
-    }).catch(() => {});
+    }).catch((err) => console.error("DB Log error:", err.message));
 
-    return info;
+    return data;
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error("Email sending failed:", error.message);
 
     EmailDelivery.create({
       type,
-      recipient: mail.to,
+      recipient: Array.isArray(mail.to) ? mail.to.join(",") : mail.to,
       subject: mail.subject,
       status: "failed",
       error: error.message,
       relatedId: options.relatedId || "",
-    }).catch(() => {});
+    }).catch((err) => console.error("DB Log error:", err.message));
 
     throw error;
   }

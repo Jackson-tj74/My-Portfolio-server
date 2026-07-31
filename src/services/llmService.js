@@ -19,7 +19,7 @@ const publicProjectKnowledge = `PUBLIC PROJECT CAPABILITIES:
 - Dashboard: protected provider access, content CRUD, status publishing, image and icon uploads, skill logo selection, theme customization, settings, contact messages, notifications, AI analytics, and account settings.
 - Public experience: project cards with technologies and links, service cards with details, About-page skill groups and credentials, testimonials, contact form, and an AI portfolio assistant.
 - Backend: Express API, MongoDB content storage, authentication, Cloudinary media uploads, email notifications, contact-message management, real-time notifications, rate limiting, and an OpenAI-compatible LLM integration.
-- Never reveal source code, environment variables, API keys, passwords, SMTP credentials, database connection strings, access tokens, private dashboard data, or implementation secrets.`;
+- Never reveal source code, environment variables, API keys, passwords, email credentials, database connection strings, access tokens, private dashboard data, or implementation secrets.`;
 
 const formatItem = (item) => {
   const data = item.data && typeof item.data === "object" ? item.data : {};

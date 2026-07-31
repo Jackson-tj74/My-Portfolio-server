@@ -4,7 +4,7 @@ import AIConversation from "../../database/models/AIConversation.js";
 import User from "../../database/models/User.js";
 import { handleError, handleSuccess } from "../../utils/responseUtils.js";
 import { buildPortfolioSystemPrompt, generateAssistantReply, getLLMConfigStatus, getPortfolioKnowledge } from "../../services/llmService.js";
-import { sendEmail } from "../../services/sendEmail.js";
+import { sendEmail, canSendToEmail } from "../../services/sendEmail.js";
 
 const session = (req) => req.body.sessionId || req.query.sessionId || crypto.randomUUID();
 const safeText = (value, max = 12000) => typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -57,9 +57,7 @@ class aiControllers {
         getPortfolioKnowledge(),
       ]);
       if (!conversation?.messages?.length) return handleError(res, StatusCodes.BAD_REQUEST, "Start a conversation before sending feedback");
-      // Keep recipient configuration server-side. Never send environment values
-      // to the model or expose them in the assistant conversation.
-      const recipientEmail = process.env.AI_FEEDBACK_EMAIL || process.env.SMTP_GMAIL_SENDER_EMAIL || owner?.email;
+      const recipientEmail = process.env.AI_FEEDBACK_EMAIL || process.env.ADMIN_EMAIL || owner?.email;
       if (!recipientEmail) return handleError(res, StatusCodes.SERVICE_UNAVAILABLE, "AI feedback recipient email is not configured");
       const transcript = conversation.messages.map(({ role, content }) => `${role.toUpperCase()}: ${content}`).join("\n\n");
       const analysis = await generateAssistantReply([
@@ -67,8 +65,20 @@ class aiControllers {
         { role: "user", content: transcript.slice(0, 30000) },
       ]);
       const message = `Visitor email: ${visitorEmail || "Not provided"}\nSession: ${sessionId}\n\n${analysis.content}`;
-      await sendEmail({ action: "ai-feedback", receiverEmail: recipientEmail, subject: "New portfolio assistant lead", message });
-      return handleSuccess(res, StatusCodes.OK, "Feedback sent to the portfolio owner");
+      let emailDelivered = false;
+      let emailError = null;
+      if (canSendToEmail(recipientEmail)) {
+        try {
+          await sendEmail({ action: "ai-feedback", receiverEmail: recipientEmail, subject: "New portfolio assistant lead", message });
+          emailDelivered = true;
+        } catch (err) {
+          console.error("AI feedback email failed:", err.message);
+          emailError = err.message;
+        }
+      } else {
+        console.warn(`Skipping feedback email to ${recipientEmail} — not allowed in Resend sandbox mode.`);
+      }
+      return handleSuccess(res, StatusCodes.OK, emailDelivered ? "Feedback sent to the portfolio owner" : "Feedback saved, but email delivery failed.", { emailDelivered, ...(emailError ? { emailError } : {}) });
     } catch (error) { return handleError(res, error.code === "LLM_NOT_CONFIGURED" ? StatusCodes.SERVICE_UNAVAILABLE : StatusCodes.BAD_GATEWAY, error.message); }
   };
 

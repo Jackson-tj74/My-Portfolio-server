@@ -14,6 +14,7 @@ import { createRateLimiter, rejectUnsafeKeys, requestId, securityHeaders } from 
 import { verifyToken } from './utils/jwtUtils.js';
 import { FindUserByID } from './modules/auth/authRepositories.js';
 import { registerSocketServer } from './services/realtimeService.js';
+import { isSandboxMode } from './services/sendEmail.js';
 
 dotenv.config({ quiet: true });
 const app = express();
@@ -89,4 +90,5 @@ registerSocketServer(io);
 
 httpServer.listen(port, () => {
   console.log(`Server running on ${port}`);
+  if (isSandboxMode()) console.warn(`⚠️  Resend sandbox mode: emails only deliver to ${process.env.ADMIN_EMAIL}. Verify a domain at resend.com/domains for production.`);
 });

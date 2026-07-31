@@ -1,38 +1,51 @@
 My Portfolio Backend
 
-This is the backend server for My Portfolio, handling user signup, login, email verification, and email notifications. It is built with Node.js, Express, and MongoDB.
+This is the backend server for My Portfolio, handling user signup, login, email notifications, contact messages, portfolio content management, real-time notifications, and an AI portfolio assistant. It is built with Node.js, Express, and MongoDB.
 
 Features
 User registration and login with JWT authentication
-Email verification for new users
-Sending emails via SMTP (Gmail)
+Email notifications via Resend API
+Contact-message management with admin reply
+Newsletter subscriptions
+Portfolio content CRUD (projects, services, skills, experience, education, certificates, testimonials, gallery, settings)
+Real-time notifications via Socket.IO
+AI portfolio assistant with OpenAI-compatible LLM integration
 Password hashing with bcrypt
 Data validation using Joi
-Session management with Express-session
-MongoDB database integration
+Cloudinary media uploads
 Environment Variables
 
-Create a .env file in the backend root and set the following:
+Create a .env file in the project root and set the following:
 
 # Server configuration
 PORT=3000
-RANDOM_STRING_LENGTH=16
-VERIFICATION_URL=http://localhost:3000/verify
 DATABASE_URL=mongodb+srv://username:password@cluster.mongodb.net/dbname
+CLIENT_URL=http://localhost:5173
+SECRET_KEY=generate-a-random-secret-with-at-least-32-characters
+PROVIDER_SETUP_KEY=generate-a-separate-setup-key
 
-# Email service
-SMTP_HOST_PORT=587
-SMTP_HOST=smtp.gmail.com
-SMTP_GMAIL_SENDER_EMAIL=youremail@gmail.com
-SMTP_GMAIL_SENDER_PASSWORD=yourpassword
+# Email service (Resend API)
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=Acme <onboarding@resend.dev>
+ADMIN_EMAIL=youremail@example.com
+
+# OpenAI-compatible LLM endpoint (for example Groq or another provider)
+LLM_API_URL=https://api.groq.com/openai/v1/chat/completions
+LLM_API_KEY=your-api-key
+LLM_MODEL=llama-3.3-70b-versatile
+
+# Required when dashboard images are uploaded
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_SECRET_KEY=your-api-secret
 
 Replace the placeholder values with your actual credentials. Keep this file secret.
 
 Installation
 Clone the repository:
 git clone https://github.com/Jackson-tj74/My-Portfolio-server.git
-Navigate to the backend folder:
-cd My-Portfolio-server/server
+Navigate to the project folder:
+cd My-Portfolio-server
 Install dependencies:
 npm install
 Create a .env file as shown above.
@@ -52,8 +65,8 @@ Technologies
 Node.js
 Express.js
 MongoDB / Mongoose
-Nodemailer (SMTP email)
-Passport.js (Google OAuth 2.0)
+Resend (email delivery API)
+Socket.IO (real-time notifications)
 Bcrypt
 Joi for data validation
-Express-session
+Cloudinary (media uploads)
