@@ -40,10 +40,10 @@ export const updateContent = async (kind, id, payload) => {
   assertKind(kind);
   const update = { ...payload };
   if (payload.slug || payload.title) update.slug = slugify(payload.slug || payload.title);
-  return PortfolioContent.findOneAndUpdate({ _id: id, kind, deletedAt: null }, update, { new: true, runValidators: true });
+  return PortfolioContent.findOneAndUpdate({ _id: id, kind, deletedAt: null }, update, { returnDocument: "after", runValidators: true });
 };
 
 export const softDeleteContent = (kind, id) => {
   assertKind(kind);
-  return PortfolioContent.findOneAndUpdate({ _id: id, kind, deletedAt: null }, { deletedAt: new Date(), status: "draft" }, { new: true });
+  return PortfolioContent.findOneAndUpdate({ _id: id, kind, deletedAt: null }, { deletedAt: new Date(), status: "draft" }, { returnDocument: "after" });
 };

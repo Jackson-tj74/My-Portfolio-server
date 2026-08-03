@@ -27,6 +27,3 @@ export const buildEmail = (type, options = {}) => {
   }
 };
 
-export const welcomePortfolioTemplate = (receiverEmail, link) => buildEmail("welcome-message", { receiverEmail, link });
-export const thankYouContactTemplate = (receiverEmail, _action, link) => buildEmail("thank-message", { receiverEmail, link });
-export const ContactMeTemplate = (receiverEmail, fullName, email, subject, message) => buildEmail("contact-us", { receiverEmail, fullName, email, subject, message });

@@ -10,24 +10,12 @@ const findUser = (query, includePassword = false) => {
   return includePassword ? request.select("+password") : request;
 };
 
-const createToken = (token, userId, deviceId) => Token.create({ token, userId, deviceId });
-
-const deleteToken = (token, userId) => Token.deleteOne({ token, userId });
-
-const updateVerify = (id, updateData) => User.updateOne({ _id: id }, updateData);
-
 const FindUserByID = (id) => User.findById(id);
 
 const deleteOneToken = ({ userId, deviceId }) => Token.findOneAndDelete({ userId, deviceId });
 
-const findToken = ({ userId, token }) => Token.findOne({ userId, token });
-
-const updatedProfile = (userId, data) => 
-  User.findByIdAndUpdate(userId, data, { new: true });
-
-const changePassword = (userId, newPassword) =>
-  User.findByIdAndUpdate(userId, { password: newPassword }, { new: true });
-
+const updatedProfile = (userId, data) =>
+  User.findByIdAndUpdate(userId, data, { returnDocument: "after", runValidators: true });
 
 const createMessage = (data) => Message.create(data);
 
@@ -35,39 +23,26 @@ const getAllMessages = (query = {}) => Message.find(query).sort({ createdAt: -1 
 
 const countMessages = (query = {}) => Message.countDocuments(query);
 
-const updateMessage = (id, data) => Message.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+const updateMessage = (id, data) =>
+  Message.findByIdAndUpdate(id, data, { returnDocument: "after", runValidators: true });
 
 const findMessageAndDelete = (id) => Message.findByIdAndDelete(id);
 
-
 const deleteUserComplete = async (userId) => {
-  await Message.deleteMany({ 
-    $or: [{ senderId: userId }, { receiverId: userId }] 
-  });
-  
- 
   await Token.deleteMany({ userId });
-
-  return await User.findByIdAndDelete(userId);
+  return User.findByIdAndDelete(userId);
 };
-
-
 
 export {
   createUser,
   findUser,
-  createToken,
-  updateVerify,
   FindUserByID,
-  deleteToken,
-  findToken,
   deleteOneToken,
   updatedProfile,
-  changePassword,
   createMessage,
   getAllMessages,
   countMessages,
   updateMessage,
   findMessageAndDelete,
-  deleteUserComplete
+  deleteUserComplete,
 };

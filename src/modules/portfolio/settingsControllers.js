@@ -14,7 +14,7 @@ class settingsControllers {
     try {
       const key = req.params.key.toLowerCase();
       if (!/^[a-z][a-z0-9_-]{1,80}$/.test(key)) return handleError(res, StatusCodes.BAD_REQUEST, "Invalid setting key");
-      const row = await PortfolioSetting.findOneAndUpdate({ key }, { key, value: req.body.value }, { new: true, upsert: true, runValidators: true });
+      const row = await PortfolioSetting.findOneAndUpdate({ key }, { key, value: req.body.value }, { returnDocument: "after", upsert: true, runValidators: true });
       return handleSuccess(res, StatusCodes.OK, "Portfolio setting saved", row);
     } catch (error) { return handleError(res, StatusCodes.BAD_REQUEST, error.message); }
   };

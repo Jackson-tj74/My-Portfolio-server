@@ -1,6 +1,44 @@
+# Environment variables
 .env
+.env.local
+.env.*.local
 
-node_modules
+# Dependencies
+node_modules/
 
+# Lock files (uncomment if you want to track package-lock.json)
 package-lock.json
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Misc
+.copilot-assistant/
+coverage/
+.nyc_output/

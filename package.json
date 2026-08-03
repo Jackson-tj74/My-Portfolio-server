@@ -1,11 +1,14 @@
 {
-  "name": "community-service-server",
+  "name": "my-portfolio-server",
   "version": "1.0.0",
-  "description": "Community Service is a platform where people in the community can book services and easily connect with technicians. It helps solve the problem of finding skilled professionals without knowing where they live or how to contact them.",
+  "description": "Backend server for My Portfolio - handling authentication, email notifications, contact messages, portfolio content management, real-time notifications, and an AI portfolio assistant.",
   "license": "ISC",
-  "author": "Coding School cohot4",
+  "author": "Jackson Tuyikunde",
   "type": "module",
-  "main": "server.js",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
@@ -14,7 +17,6 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
-    "connect-multiparty": "^2.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -22,9 +24,11 @@
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.2",
-    "nodemon": "^3.1.14",
-    "randomstring": "^1.3.1",
+    "multer": "^2.2.0",
     "resend": "^6.18.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

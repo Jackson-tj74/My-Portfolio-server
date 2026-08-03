@@ -24,7 +24,7 @@ class notificationControllers {
 
   static markRead = async (req, res) => {
     try {
-      const notification = await Notification.findOneAndUpdate({ _id: req.params.id, recipient: currentUser(req), deletedAt: null }, { readAt: new Date() }, { new: true }).lean();
+      const notification = await Notification.findOneAndUpdate({ _id: req.params.id, recipient: currentUser(req), deletedAt: null }, { readAt: new Date() }, { returnDocument: "after" }).lean();
       if (!notification) return handleError(res, StatusCodes.NOT_FOUND, "Notification not found");
       emitToUser(currentUser(req), "notification:updated", notification);
       return handleSuccess(res, StatusCodes.OK, "Notification marked as read", notification);
@@ -41,7 +41,7 @@ class notificationControllers {
 
   static remove = async (req, res) => {
     try {
-      const notification = await Notification.findOneAndUpdate({ _id: req.params.id, recipient: currentUser(req), deletedAt: null }, { deletedAt: new Date() }, { new: true }).lean();
+      const notification = await Notification.findOneAndUpdate({ _id: req.params.id, recipient: currentUser(req), deletedAt: null }, { deletedAt: new Date() }, { returnDocument: "after" }).lean();
       if (!notification) return handleError(res, StatusCodes.NOT_FOUND, "Notification not found");
       emitToUser(currentUser(req), "notification:deleted", { id: req.params.id });
       return handleSuccess(res, StatusCodes.OK, "Notification deleted");

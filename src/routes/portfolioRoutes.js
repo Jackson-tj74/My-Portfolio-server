@@ -1,5 +1,5 @@
 import express from "express";
-import multiparty from "connect-multiparty";
+import { multipart } from "../middlewares/uploadMiddleware.js";
 import { verifyAccessToken } from "../middlewares/authMiddlewares.js";
 import { normalizePortfolioMultipart } from "../middlewares/requestMiddlewares.js";
 import { uploadService } from "../services/uploadService.js";
@@ -7,7 +7,6 @@ import portfolioControllers from "../modules/portfolio/portfolioControllers.js";
 import settingsControllers from "../modules/portfolio/settingsControllers.js";
 
 const router = express.Router();
-const multipart = multiparty();
 router.get("/settings", settingsControllers.publicSettings);
 router.get("/admin-settings", verifyAccessToken(["provider"]), settingsControllers.adminSettings);
 router.put("/admin-settings/:key", verifyAccessToken(["provider"]), multipart, uploadService, settingsControllers.updateSetting);

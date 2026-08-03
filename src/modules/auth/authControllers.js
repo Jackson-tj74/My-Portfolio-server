@@ -82,7 +82,7 @@ class authControllers {
         message: `${name} sent a new ${service || "portfolio"} inquiry.`,
         link: "/dashboard",
         metadata: { messageId: newMessage._id.toString(), senderEmail: email },
-      });
+      }).catch(() => {});
 
       const portfolioLink = process.env.PORTFOLIO_URL || "my-portfolio-tj.netlify.app";
       const messageAction = ["Web Development", "Cloud Solutions"].includes(service) ? "project-inquiry" : "contact-us";
@@ -240,8 +240,13 @@ class authControllers {
 
   static updateProfile = async (req, res) => {
     try {
-      const updatedUser = await updatedProfile(req.user?._id, req.body);
-      return handleSuccess(res, StatusCodes.OK, 'Profile updated successfully', updatedUser);
+      const allowedFields = ["name", "location", "phone", "avatar"];
+      const updates = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) updates[field] = req.body[field];
+      }
+      const updatedUser = await updatedProfile(req.user?._id, updates);
+      return handleSuccess(res, StatusCodes.OK, "Profile updated successfully", updatedUser);
     } catch (error) {
       return handleError(res, StatusCodes.INTERNAL_SERVER_ERROR, error.message);
     }

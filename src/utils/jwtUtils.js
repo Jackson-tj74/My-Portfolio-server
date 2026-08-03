@@ -1,5 +1,4 @@
-import randomstring from 'randomstring';
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const requireJwtSecret = () => {
   const jwtSecret = process.env.SECRET_KEY;
@@ -16,12 +15,5 @@ const generateAccessToken = (id) => {
 const verifyToken = (token) => {
   return jwt.verify(token, requireJwtSecret());
 };
-const generateRandomString = ()=> {
-  return randomstring.generate(process.env.RANDOM_STRING_LENGTH);
-};
 
-const generateOtp = () => {
-  return randomstring.generate({ length: 6, charset: 'numeric' });
-};
-
-export { generateAccessToken, verifyToken, generateRandomString, generateOtp };
+export { generateAccessToken, verifyToken };

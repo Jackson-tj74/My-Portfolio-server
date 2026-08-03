@@ -14,6 +14,7 @@ export const securityHeaders = (_req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("X-XSS-Protection", "0");
   next();
 };
 
@@ -33,8 +34,20 @@ export const rejectUnsafeKeys = (req, res, next) => {
 
 export const createRateLimiter = ({ windowMs = 15 * 60 * 1000, max = 100, message = "Too many requests" } = {}) => {
   const clients = new Map();
+
+  // Periodic cleanup of expired entries to prevent memory leaks
+  const CLEANUP_INTERVAL = windowMs;
+  const cleanup = () => {
+    const now = Date.now();
+    for (const [key, entry] of clients) {
+      if (now - entry.startedAt >= windowMs) clients.delete(key);
+    }
+  };
+  const cleanupTimer = setInterval(cleanup, CLEANUP_INTERVAL);
+  cleanupTimer.unref?.();
+
   return (req, res, next) => {
-    const key = req.ip || req.socket.remoteAddress || "unknown";
+    const key = req.ip || req.socket?.remoteAddress || "unknown";
     const now = Date.now();
     const current = clients.get(key);
     if (!current || now - current.startedAt >= windowMs) {

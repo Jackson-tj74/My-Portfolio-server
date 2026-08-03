@@ -39,7 +39,7 @@ class portfolioControllers {
     try {
       const payload = validate(contentSchema, req.body);
       const item = await createContent(req.params.kind, payload);
-      await notifyProviders({ type: "content", title: "Content created", message: `${req.params.kind} item “${item.title}” was created.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } });
+      await notifyProviders({ type: "content", title: "Content created", message: `${req.params.kind} item "${item.title}" was created.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } }).catch(() => {});
       return handleSuccess(res, StatusCodes.CREATED, "Content created", item);
     } catch (error) { return handleError(res, error.code === 11000 ? StatusCodes.CONFLICT : (error.statusCode || StatusCodes.BAD_REQUEST), error.code === 11000 ? "A content item with this slug already exists" : error.message); }
   };
@@ -49,7 +49,7 @@ class portfolioControllers {
       const payload = validate(contentSchema, req.body);
       const item = await updateContent(req.params.kind, req.params.id, payload);
       if (!item) return handleError(res, StatusCodes.NOT_FOUND, "Content not found");
-      await notifyProviders({ type: "content", title: "Content updated", message: `${req.params.kind} item “${item.title}” was updated.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } });
+      await notifyProviders({ type: "content", title: "Content updated", message: `${req.params.kind} item "${item.title}" was updated.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } }).catch(() => {});
       return handleSuccess(res, StatusCodes.OK, "Content updated", item);
     } catch (error) { return handleError(res, error.code === 11000 ? StatusCodes.CONFLICT : (error.statusCode || StatusCodes.BAD_REQUEST), error.message); }
   };
@@ -58,7 +58,7 @@ class portfolioControllers {
     try {
       const item = await softDeleteContent(req.params.kind, req.params.id);
       if (!item) return handleError(res, StatusCodes.NOT_FOUND, "Content not found");
-      await notifyProviders({ type: "content", title: "Content archived", message: `${req.params.kind} item “${item.title}” was archived.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } });
+      await notifyProviders({ type: "content", title: "Content archived", message: `${req.params.kind} item "${item.title}" was archived.`, link: "/dashboard/content", metadata: { contentId: item._id.toString(), kind: req.params.kind } }).catch(() => {});
       return handleSuccess(res, StatusCodes.OK, "Content archived", item);
     } catch (error) { return handleError(res, StatusCodes.BAD_REQUEST, error.message); }
   };

@@ -7,7 +7,7 @@ class emailControllers {
   static subscribe = async (req, res) => {
     try {
       const email = req.body.email.toLowerCase();
-      const subscription = await NewsletterSubscription.findOneAndUpdate({ email }, { email, status: "active" }, { new: true, upsert: true, setDefaultsOnInsert: true });
+      const subscription = await NewsletterSubscription.findOneAndUpdate({ email }, { email, status: "active" }, { returnDocument: "after", upsert: true, setDefaultsOnInsert: true });
       // Confirmation email is best-effort; the subscription is already saved.
       void sendEmail({ action: "newsletter", receiverEmail: email, subject: "Newsletter subscription confirmed", message: "You are now subscribed to portfolio updates." }).catch((err) => console.error("Newsletter email failed:", err.message));
       return handleSuccess(res, StatusCodes.CREATED, "Newsletter subscription confirmed", subscription);

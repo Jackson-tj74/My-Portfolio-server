@@ -1,5 +1,5 @@
 import express from "express";
-import multiparty from "connect-multiparty";
+import { multipart } from "../middlewares/uploadMiddleware.js";
 import { routeBodyValidation } from "../middlewares/requestMiddlewares.js";
 import { contactSchema, signinSchema, signupSchema } from "../validations/authValidations.js";
 import { replySchema } from "../validations/emailValidations.js";
@@ -9,8 +9,6 @@ import { uploadService } from "../services/uploadService.js";
 import { createRateLimiter } from "../middlewares/securityMiddlewares.js";
 import { handleError } from "../utils/responseUtils.js";
 import { StatusCodes } from "http-status-codes";
-
-const multipart = multiparty();
 const authRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10, message: "Too many authentication attempts" });
 const contactRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, message: "Too many contact submissions" });
 const providerSetupOnly = (req, res, next) => {
