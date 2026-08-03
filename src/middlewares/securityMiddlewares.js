@@ -18,6 +18,35 @@ export const securityHeaders = (_req, res, next) => {
   next();
 };
 
+/**
+ * Guarantees CORS headers are present on every response, even if the cors
+ * package fails to add them (e.g., for disallowed origins or edge cases).
+ * This is a belt-and-suspenders approach to prevent the
+ * "No 'Access-Control-Allow-Origin' header" browser error.
+ */
+export const corsHeaders = (allowedOrigins = []) => {
+  return (req, res, next) => {
+    const origin = req.headers.origin;
+    const allowed = !origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin);
+
+    if (allowed) {
+      res.setHeader("Access-Control-Allow-Origin", origin || "*");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Request-Id, X-Provider-Setup-Key, Accept, Origin");
+      res.setHeader("Access-Control-Expose-Headers", "X-Request-Id, Retry-After");
+      res.setHeader("Access-Control-Max-Age", "86400");
+    }
+
+    // Handle OPTIONS preflight immediately
+    if (req.method === "OPTIONS") {
+      return res.status(204).end();
+    }
+
+    next();
+  };
+};
+
 const hasUnsafeKey = (value) => {
   if (!value || typeof value !== "object") return false;
   return Object.entries(value).some(([key, child]) =>

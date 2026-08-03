@@ -14,7 +14,13 @@ mongoose.set("strictQuery", true);
 
 const connectDatabase = async () => {
   try {
-    await mongoose.connect(DATABASE_URL);
+    await mongoose.connect(DATABASE_URL, {
+      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      family: 4, // Force IPv4 to avoid DNS resolution issues on Render
+    });
     console.log("MongoDB connected successfully.");
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
